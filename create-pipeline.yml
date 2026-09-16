@@ -5,11 +5,27 @@
   connection: local
 
   vars:
+    # print.j2
     pipeline: true
     stage: test
     message: "fabio tozzi"
 
-    file: print.j2
+    # cluster-RabbitMQ.j2
+    credential: kubeconfig-cluster-rabbitmq
+    namespace: cluster-rabbitmq
+    cluster: trove-rabbitmq-test
+  
+    users:
+      - name: user1
+        vhost: roma
+        user: roma
+        id: trove-roma
+      - name: user2
+        vhost: milano
+        user: milano
+        id: trove-milano
+    
+    file: cluster-rabbitmq.j2
 
   tasks:
 
@@ -17,8 +33,7 @@
       ansible.builtin.template:
         src: "pipeline/{{ file }}"
         dest: ./Jenkinsfile
-
-   # - name: 
+ 
 
 
 

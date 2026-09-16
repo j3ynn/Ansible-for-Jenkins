@@ -3,26 +3,23 @@ pipeline {
 
     environment {
 
-        KUBECONFIG = credentials('kubeconfig-cluster-rabbitmq')
+        KUBECONFIG = credentials('{{ credential }}')
     }
 
     parameters {
         
-        string(name: 'NAMESPACE', defaultValue: 'cluster-rabbitmq', description: 'namespace dedicato rabbitmq')
+        string(name: 'NAMESPACE', defaultValue: '{{ namespace }}', description: 'namespace dedicato rabbitmq')
 
-        string(name: 'CLUSTERNAME', defaultValue: 'trove-rabbitmq-test', description: 'nome del cluster rabbitmq')
+        string(name: 'CLUSTERNAME', defaultValue: '{{ cluster }}', description: 'nome del cluster rabbitmq')
+{% for string in users %}
 
-        string(name: 'VHOST_NAME_ROMA', defaultValue: 'trove-roma', description: 'nome vhost roma')
-        string(name: 'USER_NAME_ROMA', defaultValue: 'trove-roma', description: 'nome user roma')
+        string(name: 'VHOST-NAME', defaultValue: 'trove-{{ string.vhost }}', description: 'nome vhost roma')
+        string(name: 'USER-NAME', defaultValue: 'trove-{{ string.user }}', description: 'nome user roma')
 
-        string(name: 'VHOST_NAME_MILANO', defaultValue: 'trove-milano', description: 'nome vhost milano')
-        string(name: 'USER_NAME_MILANO', defaultValue: 'trove-milano', description: 'nome user milano')
+        string(name: 'CREDENTIAL_ID', defaultValue: '{{ string.id }}', description: 'credential id milano')
 
-        string(name: 'CREDENTIAL_ID_ROMA', defaultValue: 'trove_roma', description: 'credential id roma')
-
-        string(name: 'CREDENTIAL_ID_MILANO', defaultValue: 'trove_milano', description: 'credential id milano')
-
-        choice(name: 'OPTION', choices: ['entrambi', 'roma', 'milano'], description: 'scelta per creatione vhost e user')
+{% endfor %}
+        choice(name: 'OPTION', choices: ['tutti' , {% for string in users %} '{{ string.user }}', {% endfor %}], description: 'scelta per creatione vhost e user')
     }
 
     stages {
@@ -57,73 +54,43 @@ pipeline {
             }
         }
 
-        stage('create vhost roma') {
+{% for vhost in users %}
+        stage('create vhost {{ vhost.vhost }}') {
             when {
                 expression {
-                    params.OPTION == 'roma' || params.OPTION == 'entrambi'
+                    params.OPTION == '{{ vhost.user }}' || params.OPTION == 'tutti'
                 }
             }
             steps {
                 sh """
                     ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \
-                    rabbitmqctl add_vhost ${params.VHOST_NAME_ROMA} || true
+                    rabbitmqctl add_vhost ${params.VHOST_NAME} || true
                 """
             }
         }
+{% endfor %}
 
-        stage('create vhost milano') {
+{% for user in users %}
+        stage('create users {{ user.user }}') {
             when {
                 expression {
-                    params.OPTION == 'milano' || params.OPTION == 'entrambi'
-                }
-            }
-            steps {
-                sh """
-                    ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \
-                    rabbitmqctl add_vhost ${params.VHOST_NAME_MILANO} || true
-                """
-            }
-        }
-
-        stage('create users roma') {
-            when {
-                expression {
-                    params.OPTION == 'roma' || params.OPTION == 'entrambi'
+                    params.OPTION == '{{ user.user }}' || params.OPTION == 'tutti'
                 }
             }
             steps {
                 withCredentials([
-                        string(credentialsId: params.CREDENTIAL_ID_ROMA , variable: 'trove_roma')
+                        string(credentialsId: params.CREDENTIAL_ID_ROMA , variable: '{{ user.id }}')
                 ]) {
                 sh """
                     ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \
-                    rabbitmqctl add_user ${params.USER_NAME_ROMA} "$trove_roma" || true
+                    rabbitmqctl add_user ${params.USER_NAME} "$trove_roma" || true
                     ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \
-                    rabbitmqctl set_permissions -p ${params.VHOST_NAME_ROMA} ${params.USER_NAME_ROMA} ".*" ".*" ".*"
+                    rabbitmqctl set_permissions -p ${params.VHOST_NAME} ${params.USER_NAME} ".*" ".*" ".*"
                 """
                 }
             }
         }
-
-        stage('create users milano') {
-            when {
-                expression {
-                    params.OPTION == 'milano' || params.OPTION == 'entrambi'
-                }
-            }
-            steps {
-                withCredentials([
-                        string(credentialsId: params.CREDENTIAL_ID_MILANO , variable: 'trove_milano')
-                ]) {
-                sh """
-                    ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \
-                    rabbitmqctl add_user ${params.USER_NAME_MILANO} "$trove_milano" || true
-                    ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \
-                    rabbitmqctl set_permissions -p ${params.VHOST_NAME_MILANO} ${params.USER_NAME_MILANO} ".*" ".*" ".*"
-                """
-                }
-            }
-        }
+{% endfor %}
 
         stage('check') {
             steps {
