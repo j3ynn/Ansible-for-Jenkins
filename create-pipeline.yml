@@ -1,0 +1,24 @@
+---
+
+- name: creazione pipeline
+  hosts: localhost
+  connection: local
+
+  vars:
+    pipeline: true
+    stage: test
+    message: "fabio tozzi"
+
+    file: print.j2
+
+  tasks:
+
+    - name: genera jenkinsfile da template
+      ansible.builtin.template:
+        src: "pipeline/{{ file }}"
+        dest: ./Jenkinsfile
+
+   # - name: 
+
+
+
