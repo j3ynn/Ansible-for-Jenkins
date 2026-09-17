@@ -31,9 +31,15 @@ pipeline {
                     hostname=$(curl -s http://192.168.3.165:9100/metrics | grep '^node_uname_info' | grep -oP 'nodename="\\K[^"]+')
                     kernel=$(curl -s http://192.168.3.165:9100/metrics | grep '^node_uname_info' | grep -oP 'release="\\K[^"]+')
                     load_average=$(curl -s http://192.168.3.165:9100/metrics | awk '/^node_load1 / {print $2}')
-                    
+
                     ram_available=$(curl -s http://192.168.3.165:9100/metrics | awk '/^node_memory_MemAvailable_bytes / {print $2 / 1024 / 1024 / 1024}')
                     disk_available=$(curl -s http://192.168.3.165:9100/metrics | awk '$1 == "node_filesystem_avail_bytes" && $0 ~ /mountpoint="\\/" / {print $NF / 1024 / 1024 / 1024}')
+
+                    echo "hostname: $hostname"
+                    echo "kernel: $kernel"
+                    echo "load average: $load_average"
+                    echo "ram available: $ram_available"
+                    echo "disk available: $disk_available"
                 '''
             }
         }
