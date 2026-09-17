@@ -35,10 +35,9 @@ pipeline {
 
         stage('body email') {
             steps {
-                sh '''
-
-                '''
-
+                mail to: 'jenny.bellucci@sourcesense.com'
+                subject: 'metriche'
+                body: "ciao"
             }
         }
     }
