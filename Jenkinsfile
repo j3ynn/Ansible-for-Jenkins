@@ -25,11 +25,11 @@ pipeline {
             }
         }
 
-        stage ('metriche') {
+        stage('metriche') {
             steps {
                 sh '''
-                    hostname=$(curl -s http://192.168.3.165:9100/metrics | grep '^node_uname_info' | sed 's/.*nodename="\([^"]*\)".*/\1/')
-                    kernel=$(curl -s http://192.168.3.165:9100/metrics | grep '^node_uname_info' | sed 's/.*release="\([^"]*\)".*/\1/')
+                    hostname=$(curl -s http://192.168.3.165:9100/metrics | awk -F'nodename="' '/^node_uname_info/ {split($2,a,"\""); print a[1]}')
+                    kernel=$(curl -s http://192.168.3.165:9100/metrics | awk -F'release="' '/^node_uname_info/ {split($2,a,"\""); print a[1]}')
                     load_average=$(curl -s http://192.168.3.165:9100/metrics | awk '/^node_load1 / {print $2}')
 
                     ram_available=$(curl -s http://192.168.3.165:9100/metrics | awk '/^node_memory_MemAvailable_bytes / {print $2 / 1024 / 1024 / 1024}')
