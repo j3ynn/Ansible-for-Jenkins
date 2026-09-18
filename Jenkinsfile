@@ -8,10 +8,10 @@ pipeline {
                 sh '''
                     if curl -s --max-time 5 http://192.168.3.165:9100/metrics > /dev/null
                     then
-                    availability="UNAVAILABLE"
-                    exit 1
+                    availability="AVAILABLE"
                     else
-                    availability="AVAILABLE" 
+                    availability="UNAVAILABLE"
+                    exit 0 
                     fi
                     echo "VM: $availability"
                 '''
