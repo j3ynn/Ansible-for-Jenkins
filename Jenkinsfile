@@ -3,39 +3,31 @@ pipeline {
 
     stages {
 
-        stage ('vm raggiungibile'){
+        stage ('vm raggiungibile') {
             steps {
-                script {
-                    env.AVAILABILITY = sh (
-                        script: '''
-                            if curl -s --max-time 5 http://192.168.3.165:9100/metrics > /dev/null
-                            then
-                                echo "AVAILABLE"
-                            else
-                                echo "UNAVAILABLE"
-                            fi
-                        ''',
-                        returnStdout: true
-                    ).trim()
-                    
-                    echo "VM: ${env.AVAILABILITY}" 
-                }
+                sh '''
+                    if curl -s --max-time 5 http://192.168.3.165:9100/metrics > /dev/null
+                    then
+                    availability="AVAILABLE"
+                    else
+                    availability="UNAVAILABLE"
+                    exit 1 
+                    else
+                    availability="AVAILABLE" 
+                    fi
+                    echo "VM: $availability"
+                '''
             }
         }
 
         stage('metriche') {
-            when {
-                expression {
-                    env.AVAILABILITY == 'AVAILABLE'
-                }
-            }
             steps {
                 script {
                     env.HOSTNAME = sh(
                         script: "curl -s http://192.168.3.165:9100/metrics | grep '^node_uname_info' | grep -oP 'nodename=\"\\K[^\"]+'",
                         returnStdout: true
                     ).trim()
-                    
+
                     env.KERNEL = sh(
                         script: "curl -s http://192.168.3.165:9100/metrics | grep '^node_uname_info' | grep -oP 'release=\"\\K[^\"]+'",
                         returnStdout: true
@@ -74,4 +66,3 @@ pipeline {
         }
     }
 }
-
