@@ -11,9 +11,7 @@ pipeline {
                     availability="AVAILABLE"
                     else
                     availability="UNAVAILABLE"
-                    exit 1 
-                    else
-                    availability="AVAILABLE" 
+                    exit 1  
                     fi
                     echo "VM: $availability"
                 '''
