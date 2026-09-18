@@ -22,6 +22,7 @@ pipeline {
                     
                     if (env.AVAILABILITY == 'UNAVAILABLE') {
                         error("VM non raggiungibile")
+                    }
                 }
             }
         }
