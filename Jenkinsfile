@@ -7,7 +7,7 @@ pipeline {
             steps {
                 script {
                     env.AVAILABILITY = sh (
-                        script '''
+                        script: '''
                             if curl -s --max-time 5 http://192.168.3.165:9100/metrics > /dev/null
                             then
                                 echo "AVAILABLE"
