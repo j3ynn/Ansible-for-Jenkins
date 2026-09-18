@@ -10,9 +10,9 @@ pipeline {
                         script '''
                             if curl -s --max-time 5 http://192.168.3.165:9100/metrics > /dev/null
                             then
-                            echo "AVAILABLE"
+                                echo "AVAILABLE"
                             else
-                            echo "UNAVAILABLE"
+                                echo "UNAVAILABLE"
                             fi
                         ''',
                         returnStdout: true
