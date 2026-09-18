@@ -26,7 +26,7 @@ pipeline {
         stage('metriche') {
             when {
                 expression {
-                    env.AVAILABILITY == UNAVAILABLE
+                    env.AVAILABILITY == 'AVAILABLE'
                 }
             }
             steps {
