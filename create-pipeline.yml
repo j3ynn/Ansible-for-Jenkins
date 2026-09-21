@@ -5,11 +5,6 @@
   connection: local
 
   vars:
-    # print.j2
-    pipeline: true
-    stage: test
-    message: "fabio tozzi"
-
     # cluster-RabbitMQ.j2
     credential: kubeconfig-cluster-rabbitmq
     namespace: cluster-rabbitmq

@@ -19,16 +19,15 @@ pipeline {
                     ).trim()
                     
                     echo "VM: ${env.AVAILABILITY}" 
+                    
+                    if (env.AVAILABILITY == 'UNAVAILABLE') {
+                        error("VM non raggiungibile")
+                    }
                 }
             }
         }
 
         stage('metriche') {
-            when {
-                expression {
-                    env.AVAILABILITY == 'AVAILABLE'
-                }
-            }
             steps {
                 script {
                     env.HOSTNAME = sh(
