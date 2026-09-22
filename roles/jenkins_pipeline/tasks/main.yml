@@ -2,16 +2,7 @@
 
 - name: genera Jenkinsfile node exporter
   ansible.builtin.template:
-    src: node_exporter.j2
-    dest: "./Jenkinsfile-node"
+    src: node_exporter.j2 # qui variabile per poter scegliere quale key??
+    dest: "./Jenkinsfile-{{ item.name }}"
   loop: "{{ pipelines }}"
-  when: genera_metriche | default(true) | bool
 
-- name: genera Jenkinsfile cluster rabbitmq
-  ansible.builtin.template:
-    src: cluster-RabbitMQ.j2
-    dest: "./Jenkinsfile-rabbit"
-  loop: "{{ pipelines2 }}"
-  when: genera_rabbitmq | default(true) | bool
-
-# ansible-playbook create-pipeline.yml -e "genera_rabbitmq=false"

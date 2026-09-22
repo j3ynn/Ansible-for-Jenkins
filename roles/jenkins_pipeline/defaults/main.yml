@@ -2,7 +2,7 @@
 
 pipelines:
   - name: node-exporter
-    abilita_recovery: true
+    abilita_recovery: false 
     abilita_metriche: true
     abilita_email: true
     # recovery
@@ -28,8 +28,7 @@ pipelines:
     # email
     email_to: "jenny.bellucci@sourcesense.com"
     email_subject: "metriche"
-
-pipelines2:
+    # pipeline2
   - name: cluster-rabbitmq
     abilita_parametri: true
     abilita_download: true
