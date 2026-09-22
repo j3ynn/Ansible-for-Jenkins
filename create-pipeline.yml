@@ -1,33 +1,7 @@
----
-
 - name: creazione pipeline
   hosts: localhost
-  connection: local
-
-  vars:
-    # cluster-RabbitMQ.j2
-    credential: kubeconfig-cluster-rabbitmq
-    namespace: cluster-rabbitmq
-    cluster: trove-rabbitmq-test
-  
-    users:
-      - name: user1
-        vhost: roma
-        user: roma
-        id: trove-roma
-      - name: user2
-        vhost: milano
-        user: milano
-        id: trove-milano
-    
-    file: cluster-rabbitmq.j2
-
-  tasks:
-
-    - name: genera jenkinsfile da template
-      ansible.builtin.template:
-        src: "pipeline/{{ file }}"
-        dest: ./Jenkinsfile
+  roles:
+    - jenkins_pipeline
  
 
 

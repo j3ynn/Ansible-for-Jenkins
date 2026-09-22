@@ -1,0 +1,105 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBECONFIG = credentials('{{ item.credential }}')
+    }
+
+{% if item.abilita_parametri %}
+    parameters {
+
+        string(name: 'NAMESPACE', defaultValue: '{{ item.namespace }}', description: 'namespace dedicato rabbitmq')
+        string(name: 'CLUSTERNAME', defaultValue: '{{ item.cluster }}', description: 'nome del cluster rabbitmq')
+
+{% for u in item.users %}
+        string(name: 'VHOST_{{ u.name_params }}', defaultValue: 'trove-{{ u.vhost }}', description: 'nome vhost {{ u.vhost }}')
+        string(name: 'USER_{{ u.name_params }}', defaultValue: 'trove-{{ u.user }}', description: 'nome user {{ u.user }}')
+        string(name: 'CREDENTIAL_ID_{{ u.name_params }}', defaultValue: '{{ u.id }}', description: 'credential id {{ u.user }}')
+{% endfor %}
+
+        choice(name: 'OPTION', choices: ['tutti'{% for u in item.users %}, '{{ u.user }}'{% endfor %}], description: 'scelta per creazione vhost e user')
+    }
+{% endif %}
+
+    stages {
+{% if item.abilita_download %}
+        stage('download {{ item.name_download }}') {
+            steps {
+{% for d in item.download %}
+                sh '''
+                    curl -LO "{{ d.url_download }}"
+                    chmod +x {{ d.permissions }}
+                '''
+{% endfor %}
+            }
+        }
+{% endif %}
+
+{% if item.abilita_deploy_rabbitmq %}
+        stage('deploy cluster {{ item.name_deploy }}') {
+            steps {
+                sh """
+                    {{ item.strumento }} create namespace ${params.NAMESPACE} || true
+                    {{ item.strumento }} apply -f {{ item.manifest }}
+                """
+            }
+        }
+{% endif %}
+
+{% if item.abilita_aspetta_pod %}
+        stage('aspetta pod') {
+            steps {
+                sh """
+                    {{ item.strumento }} wait \\
+                    --for=condition=AllReplicasReady=True \\
+                    rabbitmqcluster/${params.CLUSTERNAME} \\
+                    -n ${params.NAMESPACE} \\
+                    --timeout=300s
+                """
+            }
+        }
+{% endif %}
+
+{% if item.abilita_vhost %}
+{% for u in item.users %}
+        stage('create vhost {{ u.vhost }}') {
+            when {
+                expression {
+                    params.OPTION == '{{ u.user }}' || params.OPTION == 'tutti'
+                }
+            }
+            steps {
+                sh """
+                    {{ item.strumento }} exec -n ${params.NAMESPACE} {{ item.cluster }}-server-0 -- \\
+                    rabbitmqctl add_vhost ${params.VHOST_{{ u.name_params }}} || true
+                """
+            }
+        }
+{% endfor %}
+{% endif %}
+
+{% if item.abilita_user %}
+{% for u in item.users %}
+        stage('create users {{ u.user }}') {
+            when {
+                expression {
+                    params.OPTION == '{{ u.user }}' || params.OPTION == 'tutti'
+                }
+            }
+            steps {
+                withCredentials([
+                        string(credentialsId: params.CREDENTIAL_ID_{{ u.name_params }}, variable: '{{ u.id | replace("-", "_") }}')
+                ]) {
+                sh """
+                    {{ item.strumento }} exec -n ${params.NAMESPACE} {{ item.cluster }}-server-0 -- \\
+                    rabbitmqctl add_user ${params.USER_{{ u.name_params }}} "${{ '$' }}{{ u.id | replace("-", "_") }}" || true
+                    {{ item.strumento }} exec -n ${params.NAMESPACE} {{ item.cluster }}-server-0 -- \\
+                    rabbitmqctl set_permissions -p ${params.VHOST_{{ u.name_params }}} ${params.USER_{{ u.name_params }}} ".*" ".*" ".*"
+                """
+                }
+            }
+        }
+{% endfor %}
+{% endif %}
+    }
+}

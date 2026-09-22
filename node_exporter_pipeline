@@ -63,7 +63,7 @@ pipeline {
                     echo "hostname: ${env.HOSTNAME}"
                     echo "kernel: ${env.KERNEL}"
                     echo "load average: ${env.LOAD_AVERAGE}"
-                    echo "ram available: ${env.RAM_AVAILABLE} GB"
+                    echo "available ram: ${env.RAM_AVAILABLE} GB"
                 }
             }
         }
@@ -84,3 +84,69 @@ pipeline {
     }
 }
 
+pipeline {
+    agent any
+
+    environment {
+        MAX_RESTART = '{{ max_restart }}'
+    }
+
+    stages {
+{% if abilita_recovery %}
+        stage('recovery {{ service_name }}') {
+            steps {
+                sh '''
+                    tentativi=0
+                    check() {
+                        curl -s --max-time 5 {{ check_url }} > /dev/null
+                    }
+                    restart(){
+                        curl -s -X POST {{ restart_url }}
+                    }
+                    until check
+                    do
+                        tentativi=$((tentativi + 1))
+                        if [ "$tentativi" -gt "$MAX_RESTART" ]; then
+                            echo "Superato il numero massimo di restart per {{ service_name }}"
+                            exit 1
+                        fi
+                        echo "{{ service_name }} non attivo - restart $tentativi"
+                        restart
+                        sleep 5
+                    done
+                    echo "{{ service_name }} attivo"
+                '''
+            }
+        }
+{% endif %}
+
+{% if abilita_metriche %}
+        stage('metriche {{ service_name }}') {
+            steps {
+                script {
+{% for metrics in metriche %}
+                    env.{{ m.env_var }} = sh(script: "curl -s {{ metrics_url }} | {{ m.estrazione }}", returnStdout: true).trim()
+{% endfor %}
+{% for metrics in metriche %}
+                    echo "{{ m.etichetta }}: ${env.{{ m.env_var }}}"
+{% endfor %}
+                }
+            }
+        }
+{% endif %}
+
+{% if abilita_email %}
+        stage('email') {
+            steps {
+                mail to: '{{ email_to }}',
+                    subject: '{{ email_subject }}',
+                    body: """
+{% for metrics in metriche %}
+                    {{ m.etichetta }}: ${env.{{ m.env_var }}}
+{% endfor %}
+                    """
+            }
+        }
+{% endif %}
+    }
+}

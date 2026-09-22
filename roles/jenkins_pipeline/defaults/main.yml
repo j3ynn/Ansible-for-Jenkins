@@ -1,0 +1,64 @@
+---
+
+pipelines:
+  - name: node-exporter
+    abilita_recovery: true
+    abilita_metriche: true
+    abilita_email: true
+    # recovery
+    max_restart: 3
+    service_name: node_exporter
+    check_url: "http://192.168.3.165:9100/metrics"
+    restart_url: "http://192.168.3.165:5000/restart"
+    # metriche
+    metrics_url: "http://192.168.3.165:9100/metrics"
+    metriche:
+      - env_var: HOSTNAME
+        etichetta: hostname
+        estrazione: "grep '^node_uname_info' | grep -oP 'nodename=\"\\K[^\"]+'"
+      - env_var: KERNEL
+        etichetta: kernel
+        estrazione: "grep '^node_uname_info' | grep -oP 'release=\"\\K[^\"]+'"
+      - env_var: LOAD_AVERAGE
+        etichetta: load_average
+        estrazione: "awk '/^node_load1 / {print \\$2}'"
+      - env_var: AVAILABLE_RAM
+        etichetta: available_ram
+        estrazione: "awk '/^node_memory_MemAvailable_bytes / {print \\$2 / 1024 / 1024 / 1024}'"
+    # email
+    email_to: "jenny.bellucci@sourcesense.com"
+    email_subject: "metriche"
+
+pipelines2:
+  - name: cluster-rabbitmq
+    abilita_parametri: true
+    abilita_download: true
+    abilita_deploy_rabbitmq: true
+    abilita_aspetta_pod: true
+    abilita_vhost: true
+    abilita_user: true
+    # parametri
+    credential: kubeconfig-cluster-rabbitmq
+    namespace: cluster-rabbitmq
+    cluster: trove-rabbitmq-test
+    # download
+    name_download: kubectl
+    download:
+        - url_download: "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          permissions: kubectl
+    # deploy rabbitmq
+    name_deploy: rabbitmq
+    manifest: rabbitmq-trove-cluster-local.yaml
+    strumento: ./kubectl
+    # vhost
+    users:
+      - name: user1
+        name_params: ROMA
+        vhost: roma
+        user: roma
+        id: trove-roma
+      - name: user2
+        name_params: MILANO
+        vhost: milano
+        user: milano
+        id: trove-milano
