@@ -2,7 +2,8 @@
 
 - name: genera Jenkinsfile node exporter
   ansible.builtin.template:
-    src: node_exporter.j2 # qui variabile per poter scegliere quale key??
+    src: "{{ choose_template }}"
     dest: "./Jenkinsfile-{{ item.name }}"
   loop: "{{ pipelines }}"
+
 

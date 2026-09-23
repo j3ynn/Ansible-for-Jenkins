@@ -1,9 +1,16 @@
 pipeline {
-    agent any
+    agent {{ item.agent }}
 
+{% if item.abilita_deploy_rabbitmq or item.abilita_recovery %}
     environment {
+{% if item.abilita_deploy_rabbitmq %}
         KUBECONFIG = credentials('{{ item.credential }}')
+{% endif %}
+{% if item.abilita_recovery %}
+        MAX_RESTART = '{{ item.max_restart }}'
+{% endif %}
     }
+{% endif %}
 
 {% if item.abilita_parametri %}
     parameters {
@@ -20,7 +27,6 @@ pipeline {
         choice(name: 'OPTION', choices: ['tutti'{% for u in item.users %}, '{{ u.user }}'{% endfor %}], description: 'scelta per creazione vhost e user')
     }
 {% endif %}
-
     stages {
 {% if item.abilita_download %}
         stage('download {{ item.name_download }}') {
@@ -34,7 +40,6 @@ pipeline {
             }
         }
 {% endif %}
-
 {% if item.abilita_deploy_rabbitmq %}
         stage('deploy cluster {{ item.name_deploy }}') {
             steps {
@@ -45,7 +50,6 @@ pipeline {
             }
         }
 {% endif %}
-
 {% if item.abilita_aspetta_pod %}
         stage('aspetta pod') {
             steps {
@@ -59,7 +63,6 @@ pipeline {
             }
         }
 {% endif %}
-
 {% if item.abilita_vhost %}
 {% for u in item.users %}
         stage('create vhost {{ u.vhost }}') {
@@ -77,7 +80,6 @@ pipeline {
         }
 {% endfor %}
 {% endif %}
-
 {% if item.abilita_user %}
 {% for u in item.users %}
         stage('create users {{ u.user }}') {
@@ -100,6 +102,61 @@ pipeline {
             }
         }
 {% endfor %}
+{% endif %}
+{% if item.abilita_recovery %}
+        stage('recovery {{ item.service_name }}') {
+            steps {
+                sh '''
+                    tentativi=0
+                    check() {
+                        curl -s --max-time 5 {{ item.check_url }} > /dev/null
+                    }
+                    restart(){
+                        curl -s -X POST {{ item.restart_url }}
+                    }
+                    until check
+                    do
+                        tentativi=$((tentativi + 1))
+                        if [ "$tentativi" -gt "$MAX_RESTART" ]; then
+                            echo "Superato il numero massimo di restart per {{ item.service_name }}"
+                            exit 1
+                        fi
+                        echo "{{ item.service_name }} non attivo - restart $tentativi"
+                        restart
+                        sleep 5
+                    done
+                    echo "{{ item.service_name }} attivo"
+                '''
+            }
+        }
+{% endif %}
+{% if item.abilita_metriche %}
+        stage('metriche {{ item.service_name }}') {
+            steps {
+                script {
+{% for m in item.metriche %}
+                    env.{{ m.env_var }} = sh(script: "curl -s {{ item.metrics_url }} | {{ m.estrazione }}", returnStdout: true).trim()
+{% endfor %}
+{% for m in item.metriche %}
+                    echo "{{ m.etichetta }}: ${env.{{ m.env_var }}}"
+{% endfor %}
+                }
+            }
+        }
+{% endif %}
+
+{% if item.abilita_email %}
+        stage('email') {
+            steps {
+                mail to: '{{ item.email_to }}',
+                    subject: '{{ item.email_subject }}',
+                    body: """
+{% for m in item.metriche %}
+                    {{ m.etichetta }}: ${env.{{ m.env_var }}}
+{% endfor %}
+                    """
+            }
+        }
 {% endif %}
     }
 }
