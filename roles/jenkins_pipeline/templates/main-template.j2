@@ -12,7 +12,7 @@ pipeline {
     }
 {% endif %}
 
-{% if item.abilita_parametri %}
+{% if item.abilita_parametri | default(false) %}
     parameters {
 
         string(name: 'NAMESPACE', defaultValue: '{{ item.namespace }}', description: 'namespace dedicato rabbitmq')
@@ -28,7 +28,7 @@ pipeline {
     }
 {% endif %}
     stages {
-{% if item.abilita_download %}
+{% if item.abilita_download | default(false) %}
         stage('download {{ item.name_download }}') {
             steps {
 {% for d in item.download %}
@@ -40,7 +40,7 @@ pipeline {
             }
         }
 {% endif %}
-{% if item.abilita_deploy_rabbitmq %}
+{% if item.abilita_deploy_rabbitmq | default(false) %}
         stage('deploy cluster {{ item.name_deploy }}') {
             steps {
                 sh """
@@ -50,7 +50,7 @@ pipeline {
             }
         }
 {% endif %}
-{% if item.abilita_aspetta_pod %}
+{% if item.abilita_aspetta_pod | default(false) %}
         stage('aspetta pod') {
             steps {
                 sh """
@@ -63,7 +63,7 @@ pipeline {
             }
         }
 {% endif %}
-{% if item.abilita_vhost %}
+{% if item.abilita_vhost | default(false) %}
 {% for u in item.users %}
         stage('create vhost {{ u.vhost }}') {
             when {
@@ -80,7 +80,7 @@ pipeline {
         }
 {% endfor %}
 {% endif %}
-{% if item.abilita_user %}
+{% if item.abilita_user | default(false) %}
 {% for u in item.users %}
         stage('create users {{ u.user }}') {
             when {
@@ -103,7 +103,7 @@ pipeline {
         }
 {% endfor %}
 {% endif %}
-{% if item.abilita_recovery %}
+{% if item.abilita_recovery | default(false) %}
         stage('recovery {{ item.service_name }}') {
             steps {
                 sh '''
@@ -130,7 +130,7 @@ pipeline {
             }
         }
 {% endif %}
-{% if item.abilita_metriche %}
+{% if item.abilita_metriche | default(false) %}
         stage('metriche {{ item.service_name }}') {
             steps {
                 script {
@@ -145,7 +145,7 @@ pipeline {
         }
 {% endif %}
 
-{% if item.abilita_email %}
+{% if item.abilita_email | default(false) %}
         stage('email') {
             steps {
                 mail to: '{{ item.email_to }}',

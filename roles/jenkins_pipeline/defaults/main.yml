@@ -5,15 +5,9 @@ choose_template: main-template.j2
 pipelines:
   - name: node-exporter
     agent: any
-    abilita_recovery: false
+    abilita_recovery: true
     abilita_metriche: true
     abilita_email: true
-    abilita_parametri: false
-    abilita_download: false
-    abilita_deploy_rabbitmq: false
-    abilita_aspetta_pod: false
-    abilita_vhost: false
-    abilita_user: false
     max_restart: 3
     service_name: node_exporter
     check_url: "http://192.168.3.165:9100/metrics"
@@ -34,35 +28,15 @@ pipelines:
         estrazione: "awk '/^node_memory_MemAvailable_bytes / {print \\$2 / 1024 / 1024 / 1024}'"
     email_to: "jenny.bellucci@sourcesense.com"
     email_subject: "metriche"
-    credential: ""
-    namespace: ""
-    cluster: ""
-    name_download: ""
-    download: []
-    name_deploy: ""
-    manifest: ""
-    strumento: ""
-    users: []
 
   - name: cluster-rabbitmq
     agent: any
-    abilita_recovery: false
-    abilita_metriche: false
-    abilita_email: false
     abilita_parametri: true
     abilita_download: true
     abilita_deploy_rabbitmq: true
     abilita_aspetta_pod: true
     abilita_vhost: true
     abilita_user: true
-    max_restart: 0
-    service_name: ""
-    check_url: ""
-    restart_url: ""
-    metrics_url: ""
-    metriche: []
-    email_to: ""
-    email_subject: ""
     credential: kubeconfig-cluster-rabbitmq
     namespace: cluster-rabbitmq
     cluster: trove-rabbitmq-test
@@ -88,14 +62,6 @@ pipelines:
   - name: recovery
     agent: any
     abilita_recovery: true
-    abilita_metriche: false
-    abilita_email: false
-    abilita_parametri: false
-    abilita_download: false
-    abilita_deploy_rabbitmq: false
-    abilita_aspetta_pod: false
-    abilita_vhost: false
-    abilita_user: false
     max_restart: 6
     service_name: node_exporter
     check_url: "http://192.168.3.165:9100/metrics"
@@ -116,43 +82,11 @@ pipelines:
         estrazione: "awk '/^node_memory_MemAvailable_bytes / {print \\$2 / 1024 / 1024 / 1024}'"
     email_to: "jenny.bellucci@sourcesense.com"
     email_subject: "metriche"
-    credential: ""
-    namespace: ""
-    cluster: ""
-    name_download: ""
-    download: []
-    name_deploy: ""
-    manifest: ""
-    strumento: ""
-    users: []
 
   - name: install
     agent: any
-    abilita_recovery: false
-    abilita_metriche: false
-    abilita_email: false
-    abilita_parametri: false
     abilita_download: true
-    abilita_deploy_rabbitmq: false
-    abilita_aspetta_pod: false
-    abilita_vhost: false
-    abilita_user: false
-    max_restart: 0
-    service_name: ""
-    check_url: ""
-    restart_url: ""
-    metrics_url: ""
-    metriche: []
-    email_to: ""
-    email_subject: ""
-    credential: ""
-    namespace: ""
-    cluster: ""
     name_download: kubectl
     download:
       - url_download: "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         permissions: kubectl
-    name_deploy: ""
-    manifest: ""
-    strumento: ""
-    users: []
