@@ -15,10 +15,10 @@ pipelines:
     metriche:
       - env_var: HOSTNAME
         etichetta: hostname
-        estrazione: "grep '^node_uname_info' | grep -oP 'nodename=\"'\\K[^\"]+'"
+        estrazione: "grep '^node_uname_info' | grep -oP 'nodename=\"\\K[^\"]+'"
       - env_var: KERNEL
         etichetta: kernel
-        estrazione: "grep '^node_uname_info' | grep -oP 'release=\"'\\K[^\"]+'"
+        estrazione: "grep '^node_uname_info' | grep -oP 'nodename=\"\\K[^\"]+'"
       - env_var: LOAD_AVERAGE
         etichetta: load_average
         estrazione: "awk '/^node_load1 / {print \\$2}'"
@@ -71,10 +71,10 @@ pipelines:
     metriche:
       - env_var: HOSTNAME
         etichetta: hostname
-        estrazione: "grep '^node_uname_info' | grep -oP 'nodename=\"'\\K[^\"]+'"
+        estrazione: "grep '^node_uname_info' | grep -oP 'nodename=\"\\K[^\"]+'"
       - env_var: KERNEL
         etichetta: kernel
-        estrazione: "grep '^node_uname_info' | grep -oP 'release=\"'\\K[^\"]+'"
+        estrazione: "grep '^node_uname_info' | grep -oP 'release=\"\\K[^\"]+'"
       - env_var: LOAD_AVERAGE
         etichetta: load_average
         estrazione: "awk '/^node_load1 / {print \\$2}'"
