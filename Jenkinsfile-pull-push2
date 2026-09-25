@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('pull e push immagini') {
+            steps {
+                script {
+                    def images = [
+                        "nginx": [
+                            source: [ repo: "staging.local:5000", tag: "1.27-rc3" ],
+                            targets: [
+                                [ repo: "prod.local:5000", tag: "1.27" ]
+                            ]
+                        ],
+                        "redis": [
+                            source: [ repo: "staging.dislocal:5000", tag: "7.4" ],
+                            targets: [
+                                [ repo: "provincia.local:5000", tag: "7.4" ]
+                            ]
+                        ]
+                    ]
+
+                    images.each { nome, dati ->
+                        def nameImage = "${dati.source.repo}/${nome}:${dati.source.tag}"
+                        sh "docker pull ${nameImage}"
+
+                        dati.targets.each { target ->
+                            def targetImage = "${target.repo}/${nome}:${target.tag}"
+                            sh "docker tag ${nameImage} ${targetImage}"
+                            sh "docker push ${targetImage}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
