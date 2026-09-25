@@ -57,11 +57,11 @@ pipeline {
                         returnStdout: true
                     ).trim()
                     env.LOAD_AVERAGE = sh(
-                        script: "curl -s http://192.168.3.165:9100/metrics | awk '/^node_load1 / {print \$2}'",
+                        script: 'curl -s http://192.168.3.165:9100/metrics | awk '/^node_load1 / {print \$2}'',
                         returnStdout: true
                     ).trim()
                     env.AVAILABLE_RAM = sh(
-                        script: "curl -s http://192.168.3.165:9100/metrics | awk '/^node_memory_MemAvailable_bytes / {print \$2 / 1024 / 1024 / 1024}'",
+                        script: 'curl -s http://192.168.3.165:9100/metrics | awk '/^node_memory_MemAvailable_bytes / {print \$2 / 1024 / 1024 / 1024}'',
                         returnStdout: true
                     ).trim()
 
