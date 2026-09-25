@@ -154,7 +154,7 @@ pipeline {
                 script {
 {% for m in item.metriche %}
                     env.{{ m.env_var }} = sh(
-                        script: "curl -s {{ item.metrics_url }} | {{ m.estrazione }}",
+                        script: 'curl -s {{ item.metrics_url }} | {{ m.estrazione }}',
                         returnStdout: true
                     ).trim()
 {% endfor %}
