@@ -49,11 +49,11 @@ pipeline {
             steps {
                 script {
                     env.HOSTNAME = sh(
-                        script: "curl -s http://192.168.3.165:9100/metrics | grep "^node_uname_info" | grep -oP \'nodename="\\K[^"]+\''",
+                        script: 'curl -s http://192.168.3.165:9100/metrics | grep "^node_uname_info" | grep -oP \'nodename="\\K[^"]+\'',
                         returnStdout: true
                     ).trim()
                     env.KERNEL = sh(
-                        script: "curl -s http://192.168.3.165:9100/metrics | grep "^node_uname_info" | grep -oP \'nodename="\\K[^"]+\''",
+                        script: 'curl -s http://192.168.3.165:9100/metrics | grep "^node_uname_info" | grep -oP \'nodename="\\K[^"]+\'',
                         returnStdout: true
                     ).trim()
                     env.LOAD_AVERAGE = sh(
