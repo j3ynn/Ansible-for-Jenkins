@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        MAX_RESTART = '6'
+        MAX_RESTART = '3'
     }
 
 
@@ -45,7 +45,46 @@ pipeline {
             }
         }
 
+        stage('metriche node_exporter') {
+            steps {
+                script {
+                    env.HOSTNAME = sh(
+                        script: "curl -s http://192.168.3.165:9100/metrics | grep '^node_uname_info' | grep -oP 'nodename="\K[^"]+'",
+                        returnStdout: true
+                    ).trim()
+                    env.KERNEL = sh(
+                        script: "curl -s http://192.168.3.165:9100/metrics | grep '^node_uname_info' | grep -oP 'release="\K[^"]+'",
+                        returnStdout: true
+                    ).trim()
+                    env.LOAD_AVERAGE = sh(
+                        script: "curl -s http://192.168.3.165:9100/metrics | awk '/^node_load1 / {print \$2}'",
+                        returnStdout: true
+                    ).trim()
+                    env.AVAILABLE_RAM = sh(
+                        script: "curl -s http://192.168.3.165:9100/metrics | awk '/^node_memory_MemAvailable_bytes / {print \$2 / 1024 / 1024 / 1024}'",
+                        returnStdout: true
+                    ).trim()
 
+                    echo "hostname: ${env.HOSTNAME}"
+                    echo "kernel: ${env.KERNEL}"
+                    echo "load_average: ${env.LOAD_AVERAGE}"
+                    echo "available_ram: ${env.AVAILABLE_RAM}"
+                }
+            }
+        }
+
+        stage('email') {
+            steps {
+                mail to: 'jenny.bellucci@sourcesense.com',
+                    subject: 'metriche',
+                    body: """
+                    hostname: ${env.HOSTNAME}
+                    kernel: ${env.KERNEL}
+                    load_average: ${env.LOAD_AVERAGE}
+                    available_ram: ${env.AVAILABLE_RAM}
+                    """
+            }
+        }
 
     }
 }
