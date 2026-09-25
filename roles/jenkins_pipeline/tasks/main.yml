@@ -5,10 +5,15 @@
     src: "{{ item.template }}"
     dest: "./Jenkinsfile-{{ item.name }}"
   loop: "{{ pipelines | selectattr('template', 'equalto', 'main-template.j2') | list }}"
+  when: pipeline_name is not defined or item.name == pipeline_name
+  tags: generale
 
-
-- name: genera Jenkinsfile per pull e pull-push
+- name: genera Jenkinsfile pull-push
   ansible.builtin.template:
     src: "{{ item.template }}"
     dest: "./Jenkinsfile-{{ item.name }}"
   loop: "{{ pipelines | selectattr('template', 'equalto', 'push-pull.j2') | list }}"
+  when: pipeline_name is not defined or item.name == pipeline_name
+  tags: pull-push
+
+# ansible-playbook playbook.yml -e "pipeline_name=nome-pipeline"
