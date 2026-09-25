@@ -1,0 +1,35 @@
+pipeline {
+    agent {{ item.agent }}
+
+    stages {
+        stage('pull e push immagini') {
+            steps {
+                script {
+                    def images = [
+{% for name, img in item.images.items() %}
+                        "{{ name }}": [
+                            source: [ repo: "{{ img.source.repo }}", tag: "{{ img.source.tag }}" ],
+                            targets: [
+{% for target in img.targets %}
+                                [ repo: "{{ target.repo }}", tag: "{{ target.tag }}" ]{{ "," if not loop.last }}
+{% endfor %}
+                            ]
+                        ]{{ "," if not loop.last }}
+{% endfor %}
+                    ]
+
+                    images.each { nome, dati ->
+                        def nameImage = "${dati.source.repo}/${nome}:${dati.source.tag}"
+                        sh "docker pull ${nameImage}"
+
+                        dati.targets.each { target ->
+                            def targetImage = "${target.repo}/${nome}:${target.tag}"
+                            sh "docker tag ${nameImage} ${targetImage}"
+                            sh "docker push ${targetImage}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

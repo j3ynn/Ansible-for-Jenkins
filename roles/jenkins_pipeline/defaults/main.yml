@@ -1,9 +1,8 @@
 ---
 
-choose_template: main-template.j2
-
 pipelines:
   - name: node-exporter
+    template: main-template.j2
     agent: any
     abilita_recovery: true
     abilita_metriche: true
@@ -30,6 +29,7 @@ pipelines:
     email_subject: "metriche"
 
   - name: cluster-rabbitmq
+    template: main-template.j2
     agent: any
     abilita_parametri: true
     abilita_download: true
@@ -60,6 +60,7 @@ pipelines:
         id: trove-milano
 
   - name: recovery
+    template: main-template.j2
     agent: any
     abilita_recovery: true
     max_restart: 6
@@ -84,9 +85,54 @@ pipelines:
     email_subject: "metriche"
 
   - name: install
+    template: main-template.j2
     agent: any
     abilita_download: true
     name_download: kubectl
     download:
       - url_download: "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         permissions: kubectl
+
+  - name: pull-push
+    template: push-pull.j2
+    agent: any
+    images:
+      nginx:
+        name_image: nginx
+        source:
+          repo: "staging.local:5000"
+          tag: "1.27-rc3"
+        targets:
+          - repo: "prod.local:5000"
+            tag: "1.27"
+          - repo: "prod.local:5000"
+            tag: "stable"
+          - repo: "dr.local:5000"
+            tag: "1.27"
+      redis:
+        name_image: redis
+        source:
+          repo: "staging.local:5000"
+          tag: "7.4"
+        targets:
+          - repo: "prod.local:5000"
+            tag: "7.4"
+
+  - name: pull-push2
+    template: push-pull.j2
+    agent: any
+    images:
+      nginx:
+        source:
+          repo: "staging.local:5000"
+          tag: "1.27-rc3"
+        targets:
+          - repo: "prod.local:5000"
+            tag: "1.27"
+      redis:
+        source:
+          repo: "staging.dislocal:5000"
+          tag: "7.4"
+        targets:
+          - repo: "provincia.local:5000"
+            tag: "7.4"

@@ -1,9 +1,14 @@
 ---
 
-- name: genera Jenkinsfile node exporter
+- name: genera Jenkinsfile
   ansible.builtin.template:
-    src: "{{ choose_template }}"
+    src: "{{ item.template }}"
     dest: "./Jenkinsfile-{{ item.name }}"
-  loop: "{{ pipelines }}"
+  loop: "{{ pipelines | selectattr('template', 'equalto', 'main-template.j2') | list }}"
 
 
+- name: genera Jenkinsfile per pull e pull-push
+  ansible.builtin.template:
+    src: "{{ item.template }}"
+    dest: "./Jenkinsfile-{{ item.name }}"
+  loop: "{{ pipelines | selectattr('template', 'equalto', 'push-pull.j2') | list }}"
