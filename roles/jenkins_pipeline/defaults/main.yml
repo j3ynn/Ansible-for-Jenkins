@@ -21,10 +21,10 @@ pipelines:
         estrazione: grep "^node_uname_info" | grep -oP \'nodename="\\K[^"]+\'
       - env_var: LOAD_AVERAGE
         etichetta: load_average
-        estrazione: "awk '/^node_load1 / {print \\$2}'"
+        estrazione: awk '/^node_load1 / {print \$2}'
       - env_var: AVAILABLE_RAM
         etichetta: available_ram
-        estrazione: "awk '/^node_memory_MemAvailable_bytes / {print \\$2 / 1024 / 1024 / 1024}'"
+        estrazione: awk '/^node_memory_MemAvailable_bytes / {print \$2 / 1024 / 1024 / 1024}'
     email_to: "jenny.bellucci@sourcesense.com"
     email_subject: "metriche"
 
