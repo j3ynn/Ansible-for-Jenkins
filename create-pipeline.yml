@@ -3,8 +3,6 @@
   roles:
     - jenkins_pipeline
  
-# ansible-playbook create-pipeline.yml --start-at-task "genera Jenkinsfile per pull e pull-push"
-# ansible-playbook create-pipeline.yml --start-at-task "genera Jenkinsfile"
 
 
 
