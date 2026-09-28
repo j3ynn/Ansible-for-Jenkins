@@ -94,7 +94,7 @@ pipeline {
                 ]) {
                     sh """
                         ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
-                        rabbitmqctl add_user ${params.USER_ROMA} "$$trove_roma" || true
+                        rabbitmqctl add_user ${params.USER_ROMA} "$trove_roma" || true
 
                         ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
                         rabbitmqctl set_permissions -p ${params.VHOST_ROMA} ${params.USER_ROMA} ".*" ".*" ".*"
@@ -117,7 +117,7 @@ pipeline {
                 ]) {
                     sh """
                         ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
-                        rabbitmqctl add_user ${params.USER_MILANO} "$$trove_milano" || true
+                        rabbitmqctl add_user ${params.USER_MILANO} "$trove_milano" || true
 
                         ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
                         rabbitmqctl set_permissions -p ${params.VHOST_MILANO} ${params.USER_MILANO} ".*" ".*" ".*"

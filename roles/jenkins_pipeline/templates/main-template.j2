@@ -103,7 +103,7 @@ pipeline {
                 ]) {
                     sh """
                         {{ item.strumento }} exec -n ${params.NAMESPACE} {{ item.cluster }}-server-0 -- \\
-                        rabbitmqctl add_user ${params.USER_{{ u.name_params }}} "${{ '$' }}{{ u.id | replace("-", "_") }}" || true
+                        rabbitmqctl add_user ${params.USER_{{ u.name_params }}} "${{ u.id | replace("-", "_") }}" || true
 
                         {{ item.strumento }} exec -n ${params.NAMESPACE} {{ item.cluster }}-server-0 -- \\
                         rabbitmqctl set_permissions -p ${params.VHOST_{{ u.name_params }}} ${params.USER_{{ u.name_params }}} ".*" ".*" ".*"
