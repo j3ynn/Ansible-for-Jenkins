@@ -2,89 +2,132 @@ pipeline {
     agent any
 
     environment {
-        MAX_RESTART = '3'
+        KUBECONFIG = credentials('kubeconfig-cluster-rabbitmq')
     }
 
+    parameters {
+
+        string(name: 'NAMESPACE', defaultValue: 'cluster-rabbitmq', description: 'namespace dedicato rabbitmq')
+        string(name: 'CLUSTERNAME', defaultValue: 'trove-rabbitmq-test', description: 'nome del cluster rabbitmq')
+
+        string(name: 'VHOST_ROMA', defaultValue: 'trove-roma', description: 'nome vhost roma')
+        string(name: 'USER_ROMA', defaultValue: 'trove-roma', description: 'nome user roma')
+        string(name: 'CREDENTIAL_ID_ROMA', defaultValue: 'trove-roma', description: 'credential id roma')
+        string(name: 'VHOST_MILANO', defaultValue: 'trove-milano', description: 'nome vhost milano')
+        string(name: 'USER_MILANO', defaultValue: 'trove-milano', description: 'nome user milano')
+        string(name: 'CREDENTIAL_ID_MILANO', defaultValue: 'trove-milano', description: 'credential id milano')
+
+        choice(name: 'OPTION', choices: ['tutti', 'roma', 'milano'], description: 'scelta per creazione vhost e user')
+    }
 
     stages {
 
-
-
-
-
-
-        stage('recovery node_exporter') {
+        stage('download kubectl') {
             steps {
                 sh '''
-                    tentativi=0
-
-                    check() {
-                        curl -s --max-time 5 http://192.168.3.165:9100/metrics > /dev/null
-                    }
-
-                    restart() {
-                        curl -s -X POST http://192.168.3.165:5000/restart
-                    }
-
-                    until check
-                    do
-                        tentativi=$((tentativi + 1))
-
-                        if [ "$tentativi" -gt "$MAX_RESTART" ]; then
-                            echo "Superato il numero massimo di restart per node_exporter"
-                            exit 1
-                        fi
-
-                        echo "node_exporter non attivo - restart $tentativi"
-                        restart
-                        sleep 5
-                    done
-
-                    echo "node_exporter attivo"
+                    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                    chmod +x kubectl
                 '''
             }
         }
 
-        stage('metriche node_exporter') {
+        stage('deploy cluster rabbitmq') {
             steps {
-                script {
-                    env.HOSTNAME = sh(
-                        script: '''curl -s http://192.168.3.165:9100/metrics | grep "^node_uname_info" | grep -oP \'nodename="\\K[^"]+\' ''',
-                        returnStdout: true
-                    ).trim()
-                    env.KERNEL = sh(
-                        script: '''curl -s http://192.168.3.165:9100/metrics | grep "^node_uname_info" | grep -oP \'nodename="\\K[^"]+\' ''',
-                        returnStdout: true
-                    ).trim()
-                    env.LOAD_AVERAGE = sh(
-                        script: '''curl -s http://192.168.3.165:9100/metrics | awk '/^node_load1 / {print \$2}' ''',
-                        returnStdout: true
-                    ).trim()
-                    env.AVAILABLE_RAM = sh(
-                        script: '''curl -s http://192.168.3.165:9100/metrics | awk '/^node_memory_MemAvailable_bytes / {print \$2 / 1024 / 1024 / 1024}' ''',
-                        returnStdout: true
-                    ).trim()
+                sh """
+                    ./kubectl create namespace ${params.NAMESPACE} || true
+                    ./kubectl apply -f rabbitmq-trove-cluster-local.yaml
+                """
+            }
+        }
 
-                    echo "hostname: ${env.HOSTNAME}"
-                    echo "kernel: ${env.KERNEL}"
-                    echo "load_average: ${env.LOAD_AVERAGE}"
-                    echo "available_ram: ${env.AVAILABLE_RAM}"
+        stage('aspetta pod') {
+            steps {
+                sh """
+                    ./kubectl wait \\
+                    --for=condition=AllReplicasReady=True \\
+                    rabbitmqcluster/${params.CLUSTERNAME} \\
+                    -n ${params.NAMESPACE} \\
+                    --timeout=300s
+                """
+            }
+        }
+
+        stage('create vhost roma') {
+            when {
+                expression {
+                    params.OPTION == 'roma' || params.OPTION == 'tutti'
+                }
+            }
+            steps {
+                sh """
+                    ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
+                    rabbitmqctl add_vhost ${params.VHOST_ROMA} || true
+                """
+            }
+        }
+        stage('create vhost milano') {
+            when {
+                expression {
+                    params.OPTION == 'milano' || params.OPTION == 'tutti'
+                }
+            }
+            steps {
+                sh """
+                    ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
+                    rabbitmqctl add_vhost ${params.VHOST_MILANO} || true
+                """
+            }
+        }
+
+        stage('create users roma') {
+            when {
+                expression {
+                    params.OPTION == 'roma' || params.OPTION == 'tutti'
+                }
+            }
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: params.CREDENTIAL_ID_ROMA,
+                        variable: 'trove_roma'
+                    )
+                ]) {
+                    sh """
+                        ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
+                        rabbitmqctl add_user ${params.USER_ROMA} "$$trove_roma" || true
+
+                        ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
+                        rabbitmqctl set_permissions -p ${params.VHOST_ROMA} ${params.USER_ROMA} ".*" ".*" ".*"
+                    """
+                }
+            }
+        }
+        stage('create users milano') {
+            when {
+                expression {
+                    params.OPTION == 'milano' || params.OPTION == 'tutti'
+                }
+            }
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: params.CREDENTIAL_ID_MILANO,
+                        variable: 'trove_milano'
+                    )
+                ]) {
+                    sh """
+                        ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
+                        rabbitmqctl add_user ${params.USER_MILANO} "$$trove_milano" || true
+
+                        ./kubectl exec -n ${params.NAMESPACE} trove-rabbitmq-test-server-0 -- \\
+                        rabbitmqctl set_permissions -p ${params.VHOST_MILANO} ${params.USER_MILANO} ".*" ".*" ".*"
+                    """
                 }
             }
         }
 
-        stage('email') {
-            steps {
-                mail to: 'jenny.bellucci@sourcesense.com',
-                    subject: 'metriche',
-                    body: """
-                    hostname: ${env.HOSTNAME}
-                    kernel: ${env.KERNEL}
-                    load_average: ${env.LOAD_AVERAGE}
-                    available_ram: ${env.AVAILABLE_RAM}
-                    """
-            }
-        }
+
+
 
     }
 }

@@ -68,21 +68,6 @@ pipelines:
     check_url: "http://192.168.3.165:9100/metrics"
     restart_url: "http://192.168.3.165:5000/restart"
     metrics_url: "http://192.168.3.165:9100/metrics"
-    metriche:
-      - env_var: HOSTNAME
-        etichetta: hostname
-        estrazione: "grep '^node_uname_info' | grep -oP 'nodename=\"\\K[^\"]+'"
-      - env_var: KERNEL
-        etichetta: kernel
-        estrazione: "grep '^node_uname_info' | grep -oP 'release=\"\\K[^\"]+'"
-      - env_var: LOAD_AVERAGE
-        etichetta: load_average
-        estrazione: "awk '/^node_load1 / {print \\$2}'"
-      - env_var: AVAILABLE_RAM
-        etichetta: available_ram
-        estrazione: "awk '/^node_memory_MemAvailable_bytes / {print \\$2 / 1024 / 1024 / 1024}'"
-    email_to: "jenny.bellucci@sourcesense.com"
-    email_subject: "metriche"
 
   - name: install
     template: main-template.j2
