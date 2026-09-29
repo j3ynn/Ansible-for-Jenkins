@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: configmap-file
+  namespace: output
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "create", "update", "patch"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ansible-job-configmap-file
+  namespace: output
+subjects:
+  - kind: ServiceAccount
+    name: ansible-job
+    namespace: ansible
+roleRef:
+  kind: Role
+  name: configmap-file
+  apiGroup: rbac.authorization.k8s.io

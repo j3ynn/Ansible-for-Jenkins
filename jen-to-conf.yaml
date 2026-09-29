@@ -1,0 +1,30 @@
+---
+
+- import_playbook: create-pipeline.yml
+
+- name: crea jenkinsfile generati come configmap
+  hosts: localhost
+  connection: local
+  tasks:
+
+    - name: trova i jenkinsfile generati
+      find:
+        paths: ./output
+        patterns: "Jenkinsfile-*"
+      register: jenkinsfiles
+
+    - name: costruisci i dati della ConfigMap
+      set_fact:
+        configmap_data: "{{ configmap_data | default({}) | combine({item.path | basename: lookup('file', item.path)}) }}"
+      loop: "{{ jenkinsfiles.files }}"
+
+    - name: sposta i configmap nel namespace output
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: jenkinsfiles-generati
+            namespace: output
+          data: "{{ configmap_data }}"

@@ -1,0 +1,15 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ansible-for-jenkins
+  namespace: ansible
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: ansible-job
+      restartPolicy: Never
+      containers:
+        - name: ansible-job
+          image: j3ynn/ansia-kubernetes
+          command: ["ansible-playbook", "jen-to-conf.yaml"]
