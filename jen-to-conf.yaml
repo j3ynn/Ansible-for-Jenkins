@@ -13,7 +13,7 @@
         patterns: "Jenkinsfile-*"
       register: jenkinsfiles
 
-    - name: costruisci i dati della ConfigMap
+    - name: costruisci il dizionario della ConfigMap
       set_fact:
         configmap_data: "{{ configmap_data | default({}) | combine({item.path | basename: lookup('file', item.path)}) }}"
       loop: "{{ jenkinsfiles.files }}"
